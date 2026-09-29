@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Blood Runner">
+<title>AR Blood Flow Runner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- ชั้นที่ 1: ภาพจากกล้อง -->
+<video id="cam" playsinline muted autoplay></video>
+<div id="shade"></div>
+<!-- ชั้นที่ 2: หัวใจ 3D -->
+<canvas id="three"></canvas>
+<!-- ชั้นที่ 3: จุดมือที่กล้องจับได้ -->
+<canvas id="hands"></canvas>
+<div id="zoneline"></div>
+
+<!-- แถบบน: สถานะสองทีม -->
+<div id="hud">
+  <div class="team black" id="hud-black">
+    <div class="tname">⚫ ทีมเลือดดำ</div>
+    <div class="dots"><i></i><i></i><i></i><i></i></div>
+    <div class="loc"></div>
+  </div>
+  <div class="hud-mid">
+    <div class="logo">AR Blood Flow Runner</div>
+    <div class="note">หัวใจหันหน้าเข้าหาเรา · ซีกขวาของร่างกายอยู่ทางซ้ายของจอ</div>
+    <button id="menu-btn" title="เมนูครู">⚙︎ เมนูครู</button>
+  </div>
+  <div class="team red" id="hud-red">
+    <div class="tname">🔴 ทีมเลือดแดง</div>
+    <div class="dots"><i></i><i></i><i></i><i></i></div>
+    <div class="loc"></div>
+  </div>
+</div>
+
+<!-- โซนชูมือของแต่ละทีม (แตะแทนได้) -->
+<button class="zone black" id="zone-black">
+  <div class="bar"><i></i></div>
+  <span>⬅ โซนทีมเลือดดำ · ชูมือ 🖐</span>
+</button>
+<button class="zone red" id="zone-red">
+  <div class="bar"><i></i></div>
+  <span>โซนทีมเลือดแดง · ชูมือ 🖐 ➡</span>
+</button>
+
+<div id="caption" class="hidden"></div>
+
+<!-- กล่องคำถาม / การ์ด -->
+<div id="panel" class="hidden">
+  <div id="p-tag"></div>
+  <div id="p-title"></div>
+  <div id="p-choices"></div>
+  <div id="p-hint"></div>
+  <div id="p-timer"><i></i></div>
+</div>
+
+<div id="flash"></div>
+
+<!-- หน้าเริ่ม -->
+<div id="start" class="screen">
+  <div class="card">
+    <div class="big-emoji">❤️🏎️</div>
+    <h1>AR Blood Flow Runner</h1>
+    <h2>แข่งรถเม็ดเลือดในหัวใจ</h2>
+    <div class="teams-intro">
+      <div class="ti black"><b>⚫ ทีมเลือดดำ</b><span>วิ่งหัวใจซีกขวา<br>จากร่างกาย → ไปฟอกที่ปอด</span><em>นั่งฝั่งซ้ายของจอ</em></div>
+      <div class="ti red"><b>🔴 ทีมเลือดแดง</b><span>วิ่งหัวใจซีกซ้าย<br>จากปอด → ไปเลี้ยงร่างกาย</span><em>นั่งฝั่งขวาของจอ</em></div>
+    </div>
+    <ol class="howto">
+      <li>คำถามขึ้นจอ → ทีมที่รู้ <b>ชูมือแบ 🖐 ค้างไว้</b> ทีมไหนหลอดเต็มก่อนได้ตอบ</li>
+      <li>ตอบโดย <b>ชูนิ้ว ☝️ 1 · ✌️ 2 · 🤟 3</b> ค้างไว้ ตอบผิด อีกทีมแย่งตอบได้</li>
+      <li>ตอบถูกได้ <b>เลือกการ์ดคำสั่ง</b> 1 ใบ การ์ดถูก รถวิ่งไปห้องถัดไป · การ์ดผิด รถชนผนัง!</li>
+      <li>ทีมแรกที่วิ่งครบ <b>4 ด่าน</b> ชนะ 🏆</li>
+    </ol>
+    <div class="btns">
+      <button id="btn-start" class="primary">▶ เริ่มเกม (เปิดกล้อง)</button>
+      <button id="btn-nocam">เล่นแบบไม่ใช้กล้อง (แตะจอ)</button>
+    </div>
+    <div id="start-msg"></div>
+  </div>
+</div>
+
+<!-- เมนูครู -->
+<div id="menu" class="screen hidden">
+  <div class="card small">
+    <h2>เมนูครู</h2>
+    <button data-act="skip">⏭ ข้ามคำถามนี้</button>
+    <button data-act="reset">🔄 เริ่มเกมใหม่</button>
+    <button data-act="flip">📷 สลับกล้องหน้า/หลัง</button>
+    <button data-act="hands">✋ แสดง/ซ่อน จุดมือ</button>
+    <button data-act="sound">🔊 เปิด/ปิด เสียง</button>
+    <button data-act="close" class="primary">กลับไปเล่นต่อ</button>
+    <p class="keys">คีย์ลัด: <b>1 2 3</b> เลือกข้อ · <b>Q</b> ทีมเลือดดำขอตอบ · <b>P</b> ทีมเลือดแดงขอตอบ · <b>N</b> ข้าม · <b>R</b> เริ่มใหม่</p>
+  </div>
+</div>
+
+<script src="questions.js"></script>
+<script type="module" src="game.js"></script>
+</body>
+</html>
