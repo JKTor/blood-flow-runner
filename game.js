@@ -125,43 +125,67 @@ function label(text, { size = 0.26, color = '#fff', bg = 'rgba(10,6,20,.62)', su
 }
 function addLabel(text, x, y, opts) { const l = label(text, opts); l.position.set(x, y, 1.0); heart.add(l); return l; }
 
-// ตัวหัวใจโปร่งใส (รูปหัวใจ)
+// หัวใจการ์ตูนแบบผ่าซีก: ผนังกล้ามเนื้อหุ้มสี่ห้อง ไม่ย้ายจุดทางเดินเลือด
 function buildHeartBody() {
   const s = new THREE.Shape();
-  for (let i = 0; i <= 140; i++) {
-    const t = (i / 140) * Math.PI * 2;
-    const x = 16 * Math.sin(t) ** 3;
-    const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-    const p = [x * 0.165, y * 0.165 + 0.3];
-    i ? s.lineTo(...p) : s.moveTo(...p);
-  }
-  const geo = new THREE.ExtrudeGeometry(s, { depth: 0.5, bevelEnabled: true, bevelThickness: 0.25, bevelSize: 0.2, bevelSegments: 4, curveSegments: 8 });
-  const m = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({
-    color: 0xff6b81, emissive: 0xff2d55, emissiveIntensity: 0.15, transparent: true, opacity: 0.2,
-    roughness: 0.3, depthWrite: false, side: THREE.DoubleSide,
-  }));
+  s.moveTo(0.12, 1.64);
+  s.bezierCurveTo(0.68, 1.96, 1.64, 1.73, 1.92, 1.05);
+  s.bezierCurveTo(2.26, 0.32, 2.02, -0.83, 1.40, -1.68);
+  s.bezierCurveTo(1.10, -2.14, 0.81, -2.52, 0.48, -2.55);
+  s.bezierCurveTo(-0.12, -2.52, -1.32, -1.54, -1.83, -0.70);
+  s.bezierCurveTo(-2.25, 0.05, -2.24, 1.12, -1.55, 1.62);
+  s.bezierCurveTo(-0.98, 1.98, -0.29, 1.96, 0.12, 1.64);
+  const geo = new THREE.ExtrudeGeometry(s, { depth: 0.5, bevelEnabled: true, bevelThickness: 0.19, bevelSize: 0.13, bevelSegments: 4, curveSegments: 16 });
+  const wallMat = mat(0xe95779, 1, 0.06); wallMat.roughness = 0.55;
+  const m = new THREE.Mesh(geo, wallMat);
   m.position.z = -0.75; heart.add(m);
-  // ผนังกั้นกลาง (Septum)
-  const sep = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.2, 0.5), mat(0xffb3c1, 0.55, 0.1));
-  sep.position.set(0, -0.2, 0.2); heart.add(sep);
+  const edge = new THREE.CatmullRomCurve3(s.getPoints(16).map(p => new THREE.Vector3(p.x, p.y, -0.02)), true);
+  heart.add(new THREE.Mesh(new THREE.TubeGeometry(edge, 110, 0.065, 8, true), mat(0xffa3b5, 1, 0.08)));
+  // A single soft sprite adds depth without a post-processing / bloom pass.
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: 0xff668d, opacity: 0.16, transparent: true, depthWrite: false }));
+  halo.position.set(0, 0, -1.1); halo.scale.set(6.4, 6.4, 1); heart.add(halo);
+  // Soft cut edges distinguish the chambers; the moving valves remain in front.
+  const cutMat = mat(0xffc1c3, 1, 0.05);
+  const cut = points => {
+    const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(p[0], p[1], 0.48)));
+    heart.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.075, 8, false), cutMat));
+  };
+  cut([[0, 1.37], [-0.04, 0.52], [0.02, -0.65], [0.28, -1.74], [0.48, -2.24]]);
+  cut([[-1.83, 0.03], [-0.98, -0.04], [-0.04, -0.15], [0.99, -0.03], [1.83, 0.06]]);
 }
 
 // ห้องหัวใจ 4 ห้อง
 const chambers = {};
 function buildChambers() {
   const CH = {
-    RA: { p: [-1.15, 0.72], s: [0.85, 0.72, 0.45], c: 0x5b6cff, t: 'ห้องบนขวา', e: 'RA' },
-    RV: { p: [-0.8, -0.9],  s: [0.95, 1.05, 0.5],  c: 0x4656d8, t: 'ห้องล่างขวา', e: 'RV' },
-    LA: { p: [1.15, 0.75],  s: [0.85, 0.72, 0.45], c: 0xff5a6e, t: 'ห้องบนซ้าย', e: 'LA' },
-    LV: { p: [0.8, -0.95],  s: [1.05, 1.15, 0.55], c: 0xe0283e, t: 'ห้องล่างซ้าย', e: 'LV' },
+    RA: { p: [-1.15, 0.72], s: [0.85, 0.72, 0.45], c: 0x8795ff, t: 'ห้องบนขวา', e: 'RA' },
+    RV: { p: [-0.8, -0.9],  s: [0.95, 1.05, 0.5],  c: 0x596be0, t: 'ห้องล่างขวา', e: 'RV' },
+    LA: { p: [1.15, 0.75],  s: [0.85, 0.72, 0.45], c: 0xff8b9e, t: 'ห้องบนซ้าย', e: 'LA' },
+    LV: { p: [0.8, -0.95],  s: [1.05, 1.15, 0.55], c: 0xee496a, t: 'ห้องล่างซ้าย', e: 'LV' },
   };
-  const geo = new THREE.SphereGeometry(1, 40, 28);
   for (const [k, d] of Object.entries(CH)) {
-    const m = new THREE.Mesh(geo, mat(d.c, 0.72, 0.3));
+    // Sculpt the same anchored chambers into soft atria / tapered ventricles.
+    const geo = new THREE.SphereGeometry(1, 32, 24), positions = geo.attributes.position;
+    for (let i = 0; i < positions.count; i++) {
+      const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
+      const lower = Math.max(0, -y), ventricle = k[1] === 'V';
+      positions.setXYZ(i, x * (1 - lower * (ventricle ? 0.32 : 0.12)) + (ventricle ? lower * 0.17 : 0),
+        y, z * 0.72);
+    }
+    geo.computeVertexNormals();
+    const chamberMat = mat(d.c, 1, 0.10); chamberMat.roughness = 0.48;
+    const m = new THREE.Mesh(geo, chamberMat);
     m.position.set(d.p[0], d.p[1], 0.3); m.scale.set(...d.s); m.userData.s = d.s;
     heart.add(m); chambers[k] = m;
-    const l = addLabel(d.t, d.p[0], d.p[1] + (k[1] === 'A' ? 0.12 : -0.15), { size: 0.2, bg: null, sub: d.e });
-    l.material.opacity = 0.9;
+    // Place badges beside each chamber so they do not cover a parked racer.
+    const side = Math.sign(d.p[0]);
+    const leader = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(d.p[0] + side * d.s[0] * 0.8, d.p[1], 0.95),
+      new THREE.Vector3(side * 2.08, d.p[1], 0.95),
+    ]), new THREE.LineBasicMaterial({ color: d.c, transparent: true, opacity: 0.7 }));
+    heart.add(leader);
+    const l = addLabel(d.t, side * 2.65, d.p[1], { size: 0.23, bg: 'rgba(9,19,42,.88)', sub: d.e });
+    l.material.opacity = 1;
   }
 }
 
@@ -169,11 +193,11 @@ function buildChambers() {
 const valves = {};
 function buildValve(key, x, y, dir, name) {
   const g = new THREE.Group(); g.position.set(x, y, 0.75);
-  const m = mat(0xffe8a3, 1, 0.35);
+  const m = mat(0xffe184, 1, 0.18);
   const flap = () => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.05, 0.28), m); return b; };
   const L = new THREE.Group(); L.position.x = -0.27; const fl = flap(); fl.position.x = 0.13; L.add(fl);
   const R = new THREE.Group(); R.position.x = 0.27; const fr = flap(); fr.position.x = -0.13; R.add(fr);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.035, 8, 32), mat(0xfff3cf, 1, 0.4));
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.045, 8, 32), mat(0xfff3cf, 1, 0.2));
   ring.rotation.x = Math.PI / 2;
   g.add(L, R, ring); heart.add(g);
   valves[key] = { g, L, R, dir, a: 0 };
@@ -188,7 +212,7 @@ function tube(pts, color, r = 0.2, z = 0.35) {
 }
 const lungs = {};
 function buildVessels() {
-  const BLUE = 0x4f6bff, RED = 0xff3048;
+  const BLUE = 0x788cff, RED = 0xff5977;
   const B = ROUTE.black.segs, Rr = ROUTE.red.segs;
   tube([[-1.35, -4.3], ...B[0].slice(1)], BLUE);                                  // เวนาคาวาล่าง (จากขา)
   tube([[-1.25, 3.9], [-1.3, 2.6], [-1.2, 1.3]], BLUE);                             // เวนาคาวาบน (จากหัว)
@@ -198,14 +222,52 @@ function buildVessels() {
   tube([[-3.1, 1.8, -0.3], [-1.5, 1.5, -0.65], [0.3, 1.15, -0.65], [1.1, 0.8, 0.2]], RED, 0.14); // จากปอดขวา (ด้านหลัง)
   tube([[0.38, -0.3], [0.32, 1.4], [0.4, 2.8], [1.05, 3.35], [1.9, 3.0, -0.2], [2.6, 1.0, -0.6], [2.7, -2.0, -0.6], [2.75, -4.3, -0.4]], RED, 0.22); // เอออร์ตา
 
-  const lg = new THREE.SphereGeometry(1, 36, 24);
+  const airwayMat = mat(0xffe2cd, 1, 0.04), creaseMat = mat(0xcb658b, 1, 0.02);
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x412442 });
+  const cheekMat = new THREE.MeshBasicMaterial({ color: 0xf58da8 });
+  const eyeGeo = new THREE.SphereGeometry(0.06, 12, 8);
+  const cheekGeo = new THREE.SphereGeometry(0.10, 12, 8);
   for (const [k, x] of [['right', -3.45], ['left', 3.45]]) {
-    const m = mat(0xff9fb2, 0.78, 0.15);
+    // Tapered apex, broad curved base and medial indentation replace the ovals.
+    // The left lung has a deeper cardiac notch; both retain their original anchors.
+    const side = k === 'right' ? 1 : -1, shape = new THREE.Shape();
+    const move = (a, b) => shape.moveTo(a * side, b);
+    const curve = (a, b, c, d, e, f) => shape.bezierCurveTo(a * side, b, c * side, d, e * side, f);
+    move(-0.06, 1.03);
+    curve(-0.42, 1.10, -0.73, 0.68, -0.89, 0.22);
+    curve(-1.07, -0.23, -1.03, -0.80, -0.78, -0.92);
+    curve(-0.40, -1.06, 0.24, -1.02, 0.72, -0.83);
+    curve(0.86, -0.57, k === 'left' ? 0.20 : 0.65, -0.25, k === 'left' ? 0.28 : 0.50, 0.04);
+    curve(0.36, 0.28, 0.39, 0.55, 0.24, 0.81);
+    curve(0.16, 1.00, 0.07, 1.03, -0.06, 1.03);
+    const lg = new THREE.ExtrudeGeometry(shape, { depth: 0.65, bevelEnabled: true, bevelThickness: 0.16, bevelSize: 0.10, bevelSegments: 4, curveSegments: 12 });
+    lg.translate(0, 0, -0.32);
+    const m = mat(k === 'right' ? 0xf7a4b7 : 0xffb1c2, 1, 0.08); m.roughness = 0.6;
     const l = new THREE.Mesh(lg, m); l.position.set(x, 2.0, -0.2); l.scale.set(0.95, 1.45, 0.55);
     heart.add(l); lungs[k] = l;
+    const stroke = (points, radius, material, z = 0.52) => {
+      const c = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(p[0] * side, p[1], z)));
+      l.add(new THREE.Mesh(new THREE.TubeGeometry(c, 16, radius, 7, false), material));
+    };
+    // Simplified bronchial tree, separate in color from the red / blue blood vessels.
+    stroke([[0.46, 0.22], [0.06, 0.32], [-0.17, 0.51], [-0.26, 0.79]], 0.05, airwayMat);
+    stroke([[0.06, 0.32], [-0.20, 0.12], [-0.31, -0.16], [-0.31, -0.40]], 0.047, airwayMat);
+    stroke([[-0.17, 0.51], [-0.39, 0.48], [-0.57, 0.35]], 0.032, airwayMat);
+    stroke([[-0.23, 0.03], [-0.54, -0.06], [-0.72, -0.27]], 0.031, airwayMat);
+    stroke([[-0.31, -0.21], [-0.02, -0.20], [0.19, -0.39]], 0.029, airwayMat);
+    // Right: three stylized lobes. Left: two, with a cardiac notch.
+    stroke([[-0.90, -0.19], [-0.65, -0.31], [-0.23, -0.43], [0.53, -0.71]], 0.022, creaseMat);
+    if (k === 'right') stroke([[-0.90, 0.07], [-0.47, 0.02], [0.44, 0.01]], 0.020, creaseMat);
+    // Tiny friendly faces live near the base, clear of vessel entry points.
+    for (const ex of [-0.41, 0.02]) {
+      const eye = new THREE.Mesh(eyeGeo, eyeMat); eye.position.set(ex * side, -0.60, 0.57); eye.scale.y = 1.25; l.add(eye);
+      const cheek = new THREE.Mesh(cheekGeo, cheekMat); cheek.position.set((ex + (ex < -0.2 ? -0.14 : 0.14)) * side, -0.71, 0.54); cheek.scale.set(1, 0.42, 0.22); l.add(cheek);
+    }
+    stroke([[-0.27, -0.72], [-0.19, -0.77], [-0.11, -0.72]], 0.018, eyeMat, 0.59);
   }
-  addLabel('ปอดขวา', -3.45, 3.75, { size: 0.24 });
-  addLabel('ปอดซ้าย', 3.45, 3.75, { size: 0.24 });
+  // Keep lung labels below the taller scoreboard, without moving either lung.
+  addLabel('ปอดขวา', -3.45, 0.35, { size: 0.24 });
+  addLabel('ปอดซ้าย', 3.45, 0.35, { size: 0.24 });
   addLabel('เวนาคาวา', -2.3, -3.1, { size: 0.19, sub: 'Vena Cava' });
   addLabel('เอออร์ตา', 3.65, -1.6, { size: 0.19, sub: 'Aorta' });
   addLabel('⬆ เลือดจากร่างกาย / ขา', -1.35, -4.45, { size: 0.2, bg: 'rgba(79,107,255,.55)' });
@@ -220,10 +282,29 @@ function makeCar(team) {
   const h = (r) => { const p = r / R; return R * 0.5 * Math.sqrt(Math.max(0, 1 - p * p)) * (0.207 + 2.003 * p * p - 1.123 * p ** 4) * 1.7; };
   for (let i = 0; i <= 24; i++) { const r = (R * i) / 24; pts.push(new THREE.Vector2(r, h(r))); }
   for (let i = 24; i >= 0; i--) { const r = (R * i) / 24; pts.push(new THREE.Vector2(r, -h(r))); }
-  const bodyMat = new THREE.MeshStandardMaterial({ color: T.car, emissive: T.car, emissiveIntensity: 0.35, roughness: 0.35 });
+  const bodyMat = new THREE.MeshStandardMaterial({ color: T.car, emissive: T.car, emissiveIntensity: 0.22, roughness: 0.28 });
   const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 40), bodyMat);
   body.rotation.x = Math.PI / 2;
   const g = new THREE.Group(); g.add(body);
+  // Keep the biconcave cell silhouette and original car pivot / route coordinates.
+  // Shared low-poly wheels and hubs, no extra lights or animation loop.
+  const tireMat = mat(0x14213b, 1, 0), hubMat = mat(0xc8e6ff, 1, 0.08);
+  const trimMat = mat(new THREE.Color(T.accent), 1, 0.12);
+  const tireGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.13, 12);
+  const hubGeo = new THREE.CylinderGeometry(0.058, 0.058, 0.135, 10);
+  for (const x of [-0.36, 0.36]) for (const y of [-0.21, 0.21]) {
+    const tire = new THREE.Mesh(tireGeo, tireMat), hub = new THREE.Mesh(hubGeo, hubMat);
+    tire.rotation.z = hub.rotation.z = Math.PI / 2;
+    tire.position.set(x, y, -0.04); hub.position.copy(tire.position); g.add(tire, hub);
+  }
+  const strutGeo = new THREE.BoxGeometry(0.035, 0.035, 0.17);
+  for (const x of [-0.22, 0.22]) {
+    const strut = new THREE.Mesh(strutGeo, hubMat); strut.position.set(x, -0.29, 0.12); g.add(strut);
+  }
+  const spoiler = new THREE.Mesh(new THREE.BoxGeometry(0.73, 0.11, 0.065), trimMat);
+  spoiler.position.set(0, -0.31, 0.22); g.add(spoiler);
+  const bumper = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.07, 0.06), hubMat);
+  bumper.position.set(0, 0.35, 0.04); g.add(bumper);
   const white = new THREE.MeshBasicMaterial({ color: 0xffffff }), dark = new THREE.MeshBasicMaterial({ color: 0x111111 });
   for (const sx of [-0.12, 0.12]) {
     const e = new THREE.Mesh(new THREE.SphereGeometry(0.075, 16, 12), white); e.position.set(sx, 0.06, 0.14);
@@ -231,7 +312,7 @@ function makeCar(team) {
     g.add(e, p);
   }
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: T.accent, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
-  glow.scale.set(1.5, 1.5, 1); glow.position.z = -0.15; g.add(glow);
+  glow.scale.set(1.25, 1.25, 1); glow.position.z = -0.15; g.add(glow);
   const tag = label(T.short, { size: 0.2, bg: T.accent }); tag.position.set(0, 0.55, 0.2); tag.renderOrder = 22; g.add(tag);
   g.traverse((o) => { if (o.isMesh) o.renderOrder = 20; });
   g.userData = { bodyMat, glow, team, moving: false };
@@ -787,6 +868,39 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+// Presentation-only observers: read existing DOM state, never change game state or timers.
+function initRacePresentation() {
+  for (const t of ['black', 'red']) {
+    const hud = $(`#hud-${t}`), dots = hud.querySelector('.dots');
+    const sync = () => {
+      const score = dots.querySelectorAll('i.on').length;
+      hud.querySelector('.race-track').style.setProperty('--progress', score / 4);
+      hud.querySelector('.race-score').textContent = `${score} / 4`;
+    };
+    new MutationObserver(sync).observe(dots, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    sync();
+  }
+  const fx = document.createElement('div'); fx.id = 'race-fx'; fx.setAttribute('aria-hidden', 'true');
+  document.body.append(fx);
+  let wasFinished = false, cleanup;
+  new MutationObserver(() => {
+    const finished = !!panel.querySelector('.win-btns');
+    if (finished === wasFinished) return;
+    wasFinished = finished; panel.dataset.finish = String(finished);
+    clearTimeout(cleanup); fx.replaceChildren();
+    if (!finished || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colors = ['#ffe184', '#77e5d0', '#9aa5ff', '#ff718b'];
+    // Confetti stays in the outer gutters so the summary remains legible.
+    for (let i = 0; i < 20; i++) {
+      const piece = document.createElement('i');
+      piece.style.setProperty('--x', `${i % 2 ? 93 + (i % 6) : 1 + (i % 6)}%`);
+      piece.style.setProperty('--c', colors[i % colors.length]);
+      piece.style.setProperty('--delay', `${(i % 5) * 0.06}s`); fx.append(piece);
+    }
+    cleanup = setTimeout(() => fx.replaceChildren(), 2000);
+  }).observe($('#p-choices'), { childList: true });
+}
+
 // รอฟอนต์ไทยโหลดก่อน (ป้ายในฉาก 3D วาดจากฟอนต์) แล้วค่อยสร้างฉาก
 await Promise.race([document.fonts.ready, sleep(2000)]);
 buildHeartBody(); buildVessels(); buildChambers();
@@ -796,6 +910,7 @@ buildValve('pul', -0.37, 0.4, -1);
 buildValve('aor', 0.35, 0.4, -1);
 makeCar('black'); makeCar('red'); buildTrail(); buildLoop();
 placeCar('black', 0); placeCar('red', 0); updateHud();
+initRacePresentation();
 resize(); requestAnimationFrame(frame);
 // โหมดทดสอบ (?debug) ไว้เร่งแอนิเมชันตอนตรวจงาน
 if (new URLSearchParams(location.search).has('debug')) window.BFR = { S, updateTweens, hands: (h) => (hands = h), gameTick, render: () => renderer.render(scene, cam3) };

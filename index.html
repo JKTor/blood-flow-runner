@@ -27,17 +27,22 @@
 <div id="hud">
   <div class="team black" id="hud-black">
     <div class="tname">⚫ ทีมเลือดดำ</div>
+    <div class="race-meta"><span>BODY → LUNGS</span><b class="race-score">0 / 4</b></div>
     <div class="dots"><i></i><i></i><i></i><i></i></div>
+    <div class="race-track" aria-hidden="true"><span class="race-car"><i></i></span><span class="finish-line"></span></div>
     <div class="loc"></div>
   </div>
   <div class="hud-mid">
+    <div class="race-kicker">THE HEART CIRCUIT</div>
     <div class="logo">AR Blood Flow Runner</div>
     <div class="note">หัวใจหันหน้าเข้าหาเรา · ซีกขวาของร่างกายอยู่ทางซ้ายของจอ</div>
     <button id="menu-btn" title="เมนูครู">⚙︎ เมนูครู</button>
   </div>
   <div class="team red" id="hud-red">
     <div class="tname">🔴 ทีมเลือดแดง</div>
+    <div class="race-meta"><span>LUNGS → BODY</span><b class="race-score">0 / 4</b></div>
     <div class="dots"><i></i><i></i><i></i><i></i></div>
+    <div class="race-track" aria-hidden="true"><span class="race-car"><i></i></span><span class="finish-line"></span></div>
     <div class="loc"></div>
   </div>
 </div>
@@ -68,9 +73,25 @@
 <!-- หน้าเริ่ม -->
 <div id="start" class="screen">
   <div class="card">
-    <div class="big-emoji">❤️🏎️</div>
+    <div class="start-eyebrow"><span class="live-dot"></span> BIOLOGY ARCADE <span>ม.1–2</span></div>
+    <div class="start-hero">
+      <div class="hero-copy"><div class="race-kicker">พร้อมออกสตาร์ตหรือยัง?</div>
     <h1>AR Blood Flow Runner</h1>
     <h2>แข่งรถเม็ดเลือดในหัวใจ</h2>
+      <p class="hero-description">ชูมือ ตอบให้ไว แล้วพาทีมวิ่งครบวงจร!</p></div>
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 260 230" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="heart-paint" x1="65" y1="40" x2="196" y2="200" gradientUnits="userSpaceOnUse"><stop stop-color="#ff879d"/><stop offset=".55" stop-color="#ff425f"/><stop offset="1" stop-color="#b51b52"/></linearGradient><linearGradient id="racer-paint" x1="78" y1="119" x2="187" y2="194" gradientUnits="userSpaceOnUse"><stop stop-color="#ff879d"/><stop offset="1" stop-color="#f52f59"/></linearGradient></defs>
+          <ellipse cx="135" cy="202" rx="93" ry="13" fill="#050d23" opacity=".5"/>
+          <path d="M131 183C98 157 46 122 47 76C48 29 108 22 131 61C154 22 214 29 215 76C216 122 164 157 131 183Z" fill="url(#heart-paint)" stroke="#ffa9b8" stroke-width="3"/>
+          <path d="M66 77C65 48 98 44 111 62" stroke="#ffd4dc" stroke-width="9" stroke-linecap="round" opacity=".75"/>
+          <path d="M17 122H55M24 138H48M204 157H244" stroke="#66e3de" stroke-width="5" stroke-linecap="round"/>
+          <g transform="rotate(-12 133 162)"><rect x="70" y="150" width="21" height="41" rx="9" fill="#101b38" stroke="#869bbd" stroke-width="3"/><rect x="176" y="150" width="21" height="41" rx="9" fill="#101b38" stroke="#869bbd" stroke-width="3"/><path d="M85 143V132M176 143V132" stroke="#d5e9ff" stroke-width="5"/><rect x="69" y="125" width="125" height="12" rx="5" fill="#ffe184"/><ellipse cx="133" cy="164" rx="62" ry="31" fill="url(#racer-paint)" stroke="#ffc0cb" stroke-width="3"/><ellipse cx="133" cy="160" rx="29" ry="12" fill="#b91f49"/><ellipse cx="110" cy="151" rx="10" ry="11" fill="white"/><ellipse cx="148" cy="151" rx="10" ry="11" fill="white"/><circle cx="113" cy="153" r="4.5" fill="#152039"/><circle cx="151" cy="153" r="4.5" fill="#152039"/><path d="M123 177Q133 185 144 176" stroke="white" stroke-width="3" stroke-linecap="round"/></g>
+          <path d="M224 34V67M208 50H240M31 177V195M22 186H40" stroke="#ffe184" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <span class="hero-sticker">4 ด่าน · 2 ทีม · 1 หัวใจ</span>
+      </div>
+    </div>
     <div class="teams-intro">
       <div class="ti black"><b>⚫ ทีมเลือดดำ</b><span>วิ่งหัวใจซีกขวา<br>จากร่างกาย → ไปฟอกที่ปอด</span><em>นั่งฝั่งซ้ายของจอ</em></div>
       <div class="ti red"><b>🔴 ทีมเลือดแดง</b><span>วิ่งหัวใจซีกซ้าย<br>จากปอด → ไปเลี้ยงร่างกาย</span><em>นั่งฝั่งขวาของจอ</em></div>
@@ -82,7 +103,7 @@
       <li>ทีมแรกที่วิ่งครบ <b>4 ด่าน</b> ชนะ 🏆</li>
     </ol>
     <div class="btns">
-      <button id="btn-start" class="primary">▶ เริ่มเกม (เปิดกล้อง)</button>
+      <button id="btn-start" class="primary">เริ่มแข่ง · เปิดกล้อง ↗</button>
       <button id="btn-nocam">เล่นแบบไม่ใช้กล้อง (แตะจอ)</button>
     </div>
     <div id="start-msg"></div>
